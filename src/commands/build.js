@@ -40,6 +40,7 @@ async function build(args = []) {
   purgeGlobs && (css = await purge(purgeGlobs, css));
   minifyFlag && (css = await minify(css));
 
+  await fs.ensureFile(output);
   await fs.writeFile(output, css);
 
   const prettyTime = prettyHrtime(process.hrtime(time));

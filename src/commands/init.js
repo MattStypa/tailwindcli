@@ -19,6 +19,7 @@ async function init(args = []) {
   stub = stub.replace('// let defaultConfig', 'let defaultConfig');
   stub = stub.replace("require('./plugins/container')", "require('tailwindcss/plugins/container')");
 
+  await fs.ensureFile(file);
   await fs.outputFile(file, stub);
 
   utils.success('Created Tailwind config file:', chalk.bold.magenta(file));
