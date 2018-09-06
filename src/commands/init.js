@@ -2,6 +2,7 @@ const nodePath = require('path');
 
 const chalk = require('chalk');
 const fs = require('fs-extra');
+const nodeEmoji = require('node-emoji');
 
 const utils = require('../utils.js');
 const appConstants = require('../constants.js');
@@ -22,7 +23,7 @@ async function init(args = []) {
   await fs.ensureFile(file);
   await fs.outputFile(file, stub);
 
-  utils.success('Created Tailwind config file:', chalk.bold.magenta(file));
+  utils.log(nodeEmoji.get('white_check_mark'), 'Created Tailwind config file:', chalk.bold.magenta(file));
 }
 
 async function findTailwindConfigStub() {

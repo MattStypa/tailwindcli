@@ -36,6 +36,10 @@ async function build(args = []) {
   !await fs.exists(config) && utils.criticalError(chalk.bold.magenta(config), 'does not exist.');
 
   utils.log(nodeEmoji.get('rocket'), 'Building', chalk.bold.cyan(file), '...');
+  printFlag('Purge', purgeGlobs);
+  printFlag('Minify', minifyFlag);
+  printFlag('Sourcemap', sourcemapFlag);
+  utils.log();
 
   let input = await fs.readFile(file, 'utf8');
   let plugins = [tailwind(config), autoprefixer];
@@ -59,9 +63,27 @@ async function build(args = []) {
 
   const prettyTime = prettyHrtime(process.hrtime(time));
 
-  utils.log(nodeEmoji.get('checkered_flag'), 'Finished in', chalk.bold.magenta(prettyTime));
+  utils.log(nodeEmoji.get('white_check_mark'), 'Finished in', chalk.bold.magenta(prettyTime));
   utils.log(nodeEmoji.get('package'), 'Size:', chalk.bold.magenta(bytes(result.css.length)));
   utils.log(nodeEmoji.get('floppy_disk'), 'Saved to', chalk.bold.cyan(output));
+}
+
+function printFlag(label, flag) {
+  utils.log(' ', nodeEmoji.get(flag ? '+1' : 'o'), flag ? label : chalk.dim(label));
+}
+
+function getPurgecssPlugin(patterns) {
+  const files = utils.flatten(patterns.map(pattern => glob.sync(pattern)));
+
+  return purgecss({
+    content: patterns,
+    extractors: [
+      {
+        extractor: TailwindExtractor,
+        extensions: files, // Apply the extractor to all content files
+      },
+    ],
+  });
 }
 
 function parseFlags(args) {

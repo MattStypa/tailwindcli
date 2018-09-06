@@ -15,11 +15,6 @@ function log(...msgs) {
   console.log('  ', ...msgs);
 }
 
-function success(...msgs) {
-  msgs = msgs.map((msg) => chalk.bold.green(msg));
-  console.log('  ', nodeEmoji.get('white_check_mark'), ...msgs);
-}
-
 function error(...msgs) {
   msgs = msgs.map((msg) => chalk.bold.red(msg));
   console.error('  ', nodeEmoji.get('no_entry_sign'), ...msgs);
@@ -39,4 +34,4 @@ function die() {
   process.exit(1);
 }
 
-module.exports = {name, version, log, success, error, criticalError, flatten, die};
+module.exports = {name, version, log, error, criticalError, flatten, die};
