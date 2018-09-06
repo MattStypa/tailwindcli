@@ -28,7 +28,7 @@ async function findTailwindConfigStub() {
   const rootDir = nodePath.resolve('/');
   let dir = nodePath.resolve(__dirname);
 
-  while (!await nodeModulesExistsInDir(dir)) {
+  while (!await tailwindConfigStubExistsInDir(dir)) {
     if (dir === rootDir) {
       break;
     }
@@ -36,15 +36,16 @@ async function findTailwindConfigStub() {
     dir = nodePath.resolve(dir, '..');
   }
 
-  const stubPath = nodePath.resolve(dir, 'node_modules/tailwindcss/defaultConfig.stub.js');
+  const stubPath = getStubPath(dir);
 
   return fs.existsSync(stubPath) ? stubPath : null;
 }
 
-async function nodeModulesExistsInDir(dir) {
-  const nodeModulesDir = nodePath.resolve(dir, 'node_modules');
-
-  return await fs.exists(nodeModulesDir) && (await fs.lstat(nodeModulesDir)).isDirectory();
+async function tailwindConfigStubExistsInDir(dir) {
+  return await fs.exists(getStubPath(dir));
 }
 
+function getStubPath(dir) {
+  return nodePath.resolve(dir, 'node_modules/tailwindcss/defaultConfig.stub.js');
+}
 module.exports = init;
