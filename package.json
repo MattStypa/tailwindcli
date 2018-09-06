@@ -1,6 +1,6 @@
 {
   "name": "tailwindcli",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Tailwind CSS CLI tool",
   "license": "MIT",
   "main": "main.js",

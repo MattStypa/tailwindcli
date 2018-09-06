@@ -6,7 +6,7 @@ const utils = require('./utils.js');
 const commands = require('./commands/index.js');
 
 utils.log();
-utils.log(chalk.bold('tailwind-cli'), chalk.bold.magenta(utils.version()), 'by', chalk.bold(constants.author));
+utils.log(chalk.bold(constants.name), chalk.bold.magenta(utils.version()), 'by', chalk.bold(constants.author));
 utils.log();
 main(process.argv.slice(2));
 
