@@ -17,8 +17,11 @@
     "type": "git",
     "url": "https://github.com/MattStypa/tailwind-cli"
   },
-  "bin": {
+  "scripts": {
     "tailwindcli": "node src/main.js"
+  },
+  "bin": {
+    "tailwindcli": "./src/main.js"
   },
   "engines": {
     "node": ">=7.6.0"
