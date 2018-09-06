@@ -17,6 +17,7 @@ function help() {
   utils.log('  ', chalk.bold('-p --purge <glob>'), '    ', constants.flags.build.purge[0]);
   utils.log('                         ', constants.flags.build.purge[1]);
   utils.log('  ', chalk.bold('-m --minify'), '          ', constants.flags.build.minify);
+  utils.log('  ', chalk.bold('-s --sourcemap'), '       ', constants.flags.build.sourcemap);
 };
 
 module.exports = help;

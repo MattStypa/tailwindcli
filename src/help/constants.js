@@ -10,6 +10,7 @@ const constants = {
       config: 'Tailwind config file.',
       output: 'Compiled CSS file.',
       minify: 'Minify the compiled CSS.',
+      sourcemap: 'Create a sourcemap.',
       purge: ['Purge unused CSS. Specify a glob of files to scan.', 'You can specify multiple globs.'],
     }
   }
