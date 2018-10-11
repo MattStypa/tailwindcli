@@ -1,6 +1,6 @@
 import path from 'path'
 
-export const cli = 'tailwind'
+export const cli = 'tailwindcli' // Core: Replace with 'tailwind'
 export const defaultConfigFile = 'tailwind.js'
 export const configStubFile = path.resolve(
   __dirname,

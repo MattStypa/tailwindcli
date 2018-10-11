@@ -98,7 +98,7 @@ function buildToStdout(inputFile, configFile, outputFile) {
 function buildToFile(inputFile, configFile, outputFile, startTime) {
   utils.header()
   utils.log()
-  utils.log(emoji.go, 'Building...', chalk.bold.cyan(inputFile))
+  utils.log(emoji.go, 'Building', chalk.bold.cyan(inputFile), '...')
 
   return build(inputFile, configFile, outputFile).then(result => {
     utils.writeFile(outputFile, result.css)
