@@ -49,5 +49,15 @@ describe('cli', () => {
         expect(utils.writeFile.mock.calls[0][1]).toContain('.example')
       })
     })
+
+    it('minifies CSS', () => {
+      const builds = [cli(['build', inputCssPath]), cli(['build', inputCssPath, '--minify'])]
+      Promise.all(builds).then(() => {
+        expect(process.stdout.write.mock.calls[1][0]).toContain('.example')
+        expect(process.stdout.write.mock.calls[1][0].length).toBeLessThan(
+          process.stdout.write.mock.calls[0][0].length
+        )
+      })
+    })
   })
 })

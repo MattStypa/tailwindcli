@@ -57,6 +57,7 @@
     "lodash": "^4.17.5",
     "node-emoji": "^1.8.1",
     "postcss": "^6.0.9",
+    "postcss-clean": "^1.1.0",
     "pretty-hrtime": "^1.0.3"
   },
   "browserslist": [

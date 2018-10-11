@@ -2,6 +2,7 @@ import autoprefixer from 'autoprefixer'
 import bytes from 'bytes'
 import chalk from 'chalk'
 import postcss from 'postcss'
+import postcssClean from 'postcss-clean'
 import prettyHrtime from 'pretty-hrtime'
 
 import tailwind from 'tailwindcss' // Core: Replace with '../..'
@@ -22,11 +23,16 @@ export const options = [
     usage: '-c, --config <file>',
     description: 'Tailwind config file.',
   },
+  {
+    usage: '-m, --minify',
+    description: 'Minify the output CSS.',
+  },
 ]
 
 export const optionMap = {
   output: ['output', 'o'],
   config: ['config', 'c'],
+  minify: ['minify', 'm'],
 }
 
 /**
@@ -58,13 +64,17 @@ function stopWithHelp(...msgs) {
  * @param {string} inputFile
  * @param {string} configFile
  * @param {string} outputFile
+ * @param {boolean} minify
  * @return {Promise}
  */
-function build(inputFile, configFile, outputFile) {
+function build(inputFile, configFile, outputFile, minify) {
   const css = utils.readFile(inputFile)
+  let plugins = [tailwind(configFile), autoprefixer]
+
+  minify && plugins.push(postcssClean())
 
   return new Promise((resolve, reject) => {
-    postcss([tailwind(configFile), autoprefixer])
+    postcss(plugins)
       .process(css, {
         from: inputFile,
         to: outputFile,
@@ -75,42 +85,13 @@ function build(inputFile, configFile, outputFile) {
 }
 
 /**
- * Compiles CSS file and writes it to stdout.
+ * Prints status of the flag.
  *
- * @param {string} inputFile
- * @param {string} configFile
- * @param {string} outputFile
- * @return {Promise}
+ * @param {string} label
+ * @param {boolean} flag
  */
-function buildToStdout(inputFile, configFile, outputFile) {
-  return build(inputFile, configFile, outputFile).then(result => process.stdout.write(result.css))
-}
-
-/**
- * Compiles CSS file and writes it to a file.
- *
- * @param {string} inputFile
- * @param {string} configFile
- * @param {string} outputFile
- * @param {int[]} startTime
- * @return {Promise}
- */
-function buildToFile(inputFile, configFile, outputFile, startTime) {
-  utils.header()
-  utils.log()
-  utils.log(emoji.go, 'Building', chalk.bold.cyan(inputFile), '...')
-
-  return build(inputFile, configFile, outputFile).then(result => {
-    utils.writeFile(outputFile, result.css)
-
-    const prettyTime = prettyHrtime(process.hrtime(startTime))
-
-    utils.log()
-    utils.log(emoji.yes, 'Finished in', chalk.bold.magenta(prettyTime))
-    utils.log(emoji.pack, 'Size:', chalk.bold.magenta(bytes(result.css.length)))
-    utils.log(emoji.disk, 'Saved to', chalk.bold.cyan(outputFile))
-    utils.footer()
-  })
+function printFlag(label, flag) {
+  utils.log(' ', flag ? emoji.thumbsUp : emoji.redRing, flag ? label : chalk.dim(label))
 }
 
 /**
@@ -126,6 +107,7 @@ export function run(cliParams, cliOptions) {
     const inputFile = cliParams[0]
     const configFile = cliOptions.config && cliOptions.config[0]
     const outputFile = cliOptions.output && cliOptions.output[0]
+    const minifyFlag = !!cliOptions.minify
 
     !inputFile && stopWithHelp('CSS file is required.')
     !utils.exists(inputFile) && stop(chalk.bold.magenta(inputFile), 'does not exist.')
@@ -134,10 +116,30 @@ export function run(cliParams, cliOptions) {
       !utils.exists(configFile) &&
       stop(chalk.bold.magenta(configFile), 'does not exist.')
 
-    const buildPromise = outputFile
-      ? buildToFile(inputFile, configFile, outputFile, startTime)
-      : buildToStdout(inputFile, configFile, outputFile)
+    if (outputFile) {
+      utils.header()
+      utils.log()
+      utils.log(emoji.go, 'Building', chalk.bold.cyan(inputFile), '...')
+      printFlag('Minify', minifyFlag)
+    }
 
-    buildPromise.then(resolve).catch(reject)
+    build(inputFile, configFile, outputFile, minifyFlag)
+      .then(result => {
+        if (outputFile) {
+          utils.writeFile(outputFile, result.css)
+
+          const prettyTime = prettyHrtime(process.hrtime(startTime))
+
+          utils.log()
+          utils.log(emoji.yes, 'Finished in', chalk.bold.magenta(prettyTime))
+          utils.log(emoji.pack, 'Size:', chalk.bold.magenta(bytes(result.css.length)))
+          utils.log(emoji.disk, 'Saved to', chalk.bold.cyan(outputFile))
+          utils.footer()
+        } else {
+          process.stdout.write(result.css)
+        }
+      })
+      .then(resolve)
+      .catch(reject)
   })
 }
