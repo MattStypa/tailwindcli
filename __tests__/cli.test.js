@@ -6,6 +6,7 @@ import * as utils from '../src/cli/utils'
 
 describe('cli', () => {
   const inputCssPath = path.resolve(__dirname, 'fixtures/tailwind-input.css')
+  const htmlTemplate = path.resolve(__dirname, 'fixtures/markup-template.html')
   const customConfigPath = path.resolve(__dirname, 'fixtures/custom-config.js')
 
   beforeEach(() => {
@@ -47,6 +48,13 @@ describe('cli', () => {
       cli(['build', inputCssPath, '--output', 'output.css']).then(() => {
         expect(utils.writeFile.mock.calls[0][0]).toEqual('output.css')
         expect(utils.writeFile.mock.calls[0][1]).toContain('.example')
+      })
+    })
+
+    it('purges unused CSS', () => {
+      cli(['build', inputCssPath, '--purge', htmlTemplate]).then(() => {
+        expect(process.stdout.write.mock.calls[0][0]).toContain('.container')
+        expect(process.stdout.write.mock.calls[0][0]).not.toContain('.example')
       })
     })
 

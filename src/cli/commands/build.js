@@ -1,11 +1,16 @@
 import autoprefixer from 'autoprefixer'
 import bytes from 'bytes'
 import chalk from 'chalk'
+import glob from 'glob'
+import { flatten } from 'lodash'
 import postcss from 'postcss'
 import postcssClean from 'postcss-clean'
+import purgecss from '@fullhuman/postcss-purgecss'
 import prettyHrtime from 'pretty-hrtime'
 
 import tailwind from 'tailwindcss' // Core: Replace with '../..'
+
+import TailwindExtractor from '../TailwindExtractor.js'
 
 import commands from '.'
 import * as emoji from '../emoji'
@@ -24,6 +29,10 @@ export const options = [
     description: 'Tailwind config file.',
   },
   {
+    usage: '-p, --purge <glob>',
+    description: 'Purge unused CSS. Specify one or more globs to scan.',
+  },
+  {
     usage: '-m, --minify',
     description: 'Minify the output CSS.',
   },
@@ -32,6 +41,7 @@ export const options = [
 export const optionMap = {
   output: ['output', 'o'],
   config: ['config', 'c'],
+  purge: ['purge', 'p'],
   minify: ['minify', 'm'],
 }
 
@@ -59,32 +69,6 @@ function stopWithHelp(...msgs) {
 }
 
 /**
- * Compiles CSS file.
- *
- * @param {string} inputFile
- * @param {string} configFile
- * @param {string} outputFile
- * @param {boolean} minify
- * @return {Promise}
- */
-function build(inputFile, configFile, outputFile, minify) {
-  const css = utils.readFile(inputFile)
-  let plugins = [tailwind(configFile), autoprefixer]
-
-  minify && plugins.push(postcssClean())
-
-  return new Promise((resolve, reject) => {
-    postcss(plugins)
-      .process(css, {
-        from: inputFile,
-        to: outputFile,
-      })
-      .then(resolve)
-      .catch(reject)
-  })
-}
-
-/**
  * Prints status of the flag.
  *
  * @param {string} label
@@ -92,6 +76,49 @@ function build(inputFile, configFile, outputFile, minify) {
  */
 function printFlag(label, flag) {
   utils.log(' ', flag ? emoji.thumbsUp : emoji.redRing, flag ? label : chalk.dim(label))
+}
+
+/**
+ * Gets configured purgecss plugin.
+ *
+ * @param {array} patterns
+ * @return {function}
+ */
+function getPurgecssPlugin(patterns) {
+  const files = flatten(patterns.map(pattern => glob.sync(pattern)))
+
+  return purgecss({
+    content: patterns,
+    extractors: [
+      {
+        extractor: TailwindExtractor,
+        extensions: files, // Apply the extractor to all content files
+      },
+    ],
+  })
+}
+
+/**
+ * Compiles CSS file.
+ *
+ * @param {string} inputFile
+ * @param {string} configFile
+ * @param {string} outputFile
+ * @param {array} plugins
+ * @return {Promise}
+ */
+function build(inputFile, configFile, outputFile, plugins) {
+  const css = utils.readFile(inputFile)
+
+  return new Promise((resolve, reject) => {
+    postcss([tailwind(configFile), autoprefixer].concat(plugins))
+      .process(css, {
+        from: inputFile,
+        to: outputFile,
+      })
+      .then(resolve)
+      .catch(reject)
+  })
 }
 
 /**
@@ -107,6 +134,7 @@ export function run(cliParams, cliOptions) {
     const inputFile = cliParams[0]
     const configFile = cliOptions.config && cliOptions.config[0]
     const outputFile = cliOptions.output && cliOptions.output[0]
+    const purgePatterns = cliOptions.purge
     const minifyFlag = !!cliOptions.minify
 
     !inputFile && stopWithHelp('CSS file is required.')
@@ -120,10 +148,15 @@ export function run(cliParams, cliOptions) {
       utils.header()
       utils.log()
       utils.log(emoji.go, 'Building', chalk.bold.cyan(inputFile), '...')
+      printFlag('Purge', !!purgePatterns)
       printFlag('Minify', minifyFlag)
     }
 
-    build(inputFile, configFile, outputFile, minifyFlag)
+    let plugins = []
+    minifyFlag && plugins.push(postcssClean())
+    purgePatterns && plugins.push(getPurgecssPlugin(purgePatterns))
+
+    build(inputFile, configFile, outputFile, plugins)
       .then(result => {
         if (outputFile) {
           utils.writeFile(outputFile, result.css)
