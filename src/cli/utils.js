@@ -1,5 +1,8 @@
+import nodePath from 'path'
+
 import chalk from 'chalk'
-import { ensureFileSync, existsSync, outputFileSync, readFileSync } from 'fs-extra'
+import glob from 'glob'
+import { ensureFileSync, existsSync, outputFileSync, readFileSync, statSync } from 'fs-extra'
 import { findKey, mapValues, trimStart } from 'lodash'
 
 import * as emoji from './emoji'
@@ -97,6 +100,36 @@ export function die(...msgs) {
  */
 export function exists(path) {
   return existsSync(path)
+}
+
+/**
+ * Checks if path is a file.
+ *
+ * @param {string} path
+ * @return {boolean}
+ */
+export function isFile(path) {
+  return exists(path) && statSync(path).isFile()
+}
+
+/**
+ * Checks if path is a directory.
+ *
+ * @param {string} path
+ * @return {boolean}
+ */
+export function isDir(path) {
+  return exists(path) && statSync(path).isDirectory()
+}
+
+/**
+ * Gets all files in a directory recursivily.
+ *
+ * @param {string} path
+ * @return {array}
+ */
+export function readDirDeep(path) {
+  return glob.sync(nodePath.resolve(path, '**/*'), { nodir: true })
 }
 
 /**
