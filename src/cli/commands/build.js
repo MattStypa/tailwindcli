@@ -1,8 +1,6 @@
 import autoprefixer from 'autoprefixer'
 import bytes from 'bytes'
 import chalk from 'chalk'
-import glob from 'glob'
-import { flatten } from 'lodash'
 import postcss from 'postcss'
 import postcssClean from 'postcss-clean'
 import purgecss from '@fullhuman/postcss-purgecss'
@@ -29,8 +27,8 @@ export const options = [
     description: 'Tailwind config file.',
   },
   {
-    usage: '-p, --purge <glob>',
-    description: 'Purge unused CSS. Specify one or more globs to scan.',
+    usage: '-p, --purge <directory|file>',
+    description: 'Purge unused CSS.',
   },
   {
     usage: '-m, --minify',
@@ -79,16 +77,27 @@ function printFlag(label, flag) {
 }
 
 /**
+ * Returns all existing files. If path is a directory it is read recursivily.
+ *
+ * @param {array} paths
+ * @return {array}
+ */
+function getAllFilesFromPaths(paths) {
+  const files = paths.filter(utils.isFile)
+  const directories = paths.filter(utils.isDir)
+
+  return files.concat(...directories.map(utils.readDirDeep))
+}
+
+/**
  * Gets configured purgecss plugin.
  *
- * @param {array} patterns
+ * @param {array} files
  * @return {function}
  */
-function getPurgecssPlugin(patterns) {
-  const files = flatten(patterns.map(pattern => glob.sync(pattern)))
-
+function getPurgecssPlugin(files) {
   return purgecss({
-    content: patterns,
+    content: files,
     extractors: [
       {
         extractor: TailwindExtractor,
@@ -134,7 +143,7 @@ export function run(cliParams, cliOptions) {
     const inputFile = cliParams[0]
     const configFile = cliOptions.config && cliOptions.config[0]
     const outputFile = cliOptions.output && cliOptions.output[0]
-    const purgePatterns = cliOptions.purge
+    const purgeContent = cliOptions.purge
     const minifyFlag = !!cliOptions.minify
 
     !inputFile && stopWithHelp('CSS file is required.')
@@ -148,13 +157,18 @@ export function run(cliParams, cliOptions) {
       utils.header()
       utils.log()
       utils.log(emoji.go, 'Building', chalk.bold.cyan(inputFile), '...')
-      printFlag('Purge', !!purgePatterns)
+    }
+
+    const contentFiles = purgeContent ? getAllFilesFromPaths(purgeContent) : []
+
+    if (outputFile) {
+      printFlag('Purge', contentFiles.length)
       printFlag('Minify', minifyFlag)
     }
 
     let plugins = []
     minifyFlag && plugins.push(postcssClean())
-    purgePatterns && plugins.push(getPurgecssPlugin(purgePatterns))
+    contentFiles.length && plugins.push(getPurgecssPlugin(contentFiles))
 
     build(inputFile, configFile, outputFile, plugins)
       .then(result => {
